@@ -24,6 +24,37 @@
 	GPIOE.[0:9] - Address bus
 */
 
+void SPI2_IRQHandler (void)
+{
+	uint16_t SPI_data = 0, Temp = 0;
+	uint8_t SPI_data1 = 0;
+	if (SPI_GetITStatus(SPI2, SPI_IT_RXNE) == SET)
+	{
+		SPI_I2S_ClearFlag(SPI2, SPI_IT_RXNE);
+		//while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_BSY) == SET) {};
+		if (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == SET)
+			SPI_data = SPI_I2S_ReceiveData(SPI2);
+		GPIO_SetBits(GPIOB, GPIO_Pin_12);
+		if (SPI_data == 0xFFFF)
+		{
+			GPIO_SetBits(GPIOD, GPIO_Pin_15);
+			GPIO_ResetBits(GPIOD, GPIO_Pin_14);
+		}		
+		else
+		{
+			GPIO_SetBits(GPIOD, GPIO_Pin_14);
+			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
+			Temp = SPI_data>>7;
+		}
+		
+		//SPI_data1 = SPI_data>>8;
+		USART_SendData(USART2, Temp);
+		while (USART_GetFlagStatus(USART2, USART_FLAG_TC != SET)){};
+		//USART_SendData(USART2, SPI_data);
+		//while (USART_GetFlagStatus(USART2, USART_FLAG_TC != SET)){};
+	}
+}
+
 // ********************************************************************************
 void USART2_IRQHandler(void)
 {
@@ -75,7 +106,7 @@ void GPIO_Configuration(void)
 	
 	// GPIO for USART3
 	
-//	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE); // GPIOA Clock ON
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE); // GPIOA Clock ON
 	// GPIO for LED
 	
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE); // GPIOD Clock ON
@@ -92,14 +123,14 @@ void GPIO_Configuration(void)
 	
 	//////////////////////////////////////////
 	
-/*	GPIOB_InitStructure.GPIO_OType = GPIO_OType_PP; 		// Push-pull output port
+	GPIOB_InitStructure.GPIO_OType = GPIO_OType_PP; 		// Push-pull output port
 	GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL; 		// GPIOA with pull-up
 	GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_AF; 		// Alternative mode GPIOA
 	//GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_4; 			// NSS1, SCK1, MISO1 pins
 	GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; 	// Speed GPIOA 2MHz
 	
-	//GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_12; 
-	//GPIO_Init(GPIOB, &GPIOB_InitStructure); 
+	GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_12; 
+	GPIO_Init(GPIOB, &GPIOB_InitStructure); 
 	
 	GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_13; 
 	GPIO_Init(GPIOB, &GPIOB_InitStructure); 
@@ -107,29 +138,29 @@ void GPIO_Configuration(void)
 	GPIOB_InitStructure.GPIO_Pin |= GPIO_Pin_14; 
 	GPIO_Init(GPIOB, &GPIOB_InitStructure); 
 	
-	GPIOB_InitStructure.GPIO_Pin |= GPIO_Pin_15; 
-	GPIO_Init(GPIOB, &GPIOB_InitStructure); 
+	//GPIOB_InitStructure.GPIO_Pin |= GPIO_Pin_15; 
+	//GPIO_Init(GPIOB, &GPIOB_InitStructure); 
 	
-	GPIO_PinAFConfig(GPIOB,GPIO_PinSource15,GPIO_AF_SPI2); // Alternative mode pin 4 (NSS1)
-	//GPIO_PinAFConfig(GPIOB,GPIO_PinSource12,GPIO_AF_SPI2); // Alternative mode pin 5 (SCK1)
+	//GPIO_PinAFConfig(GPIOB,GPIO_PinSource15,GPIO_AF_SPI2); // Alternative mode pin 4 (NSS1)
+	GPIO_PinAFConfig(GPIOB,GPIO_PinSource12,GPIO_AF_SPI2); // Alternative mode pin 5 (SCK1)
 	GPIO_PinAFConfig(GPIOB,GPIO_PinSource13,GPIO_AF_SPI2); // Alternative mode pin 6 (MISO1)
-	GPIO_PinAFConfig(GPIOB,GPIO_PinSource14,GPIO_AF_SPI2); // Alternative mode pin 6 (MISO1)*/
+	GPIO_PinAFConfig(GPIOB,GPIO_PinSource14,GPIO_AF_SPI2); // Alternative mode pin 6 (MISO1)
 }
 
 // ********************************************************************************
 
-/*void SPI_Configuration(void)
+void SPI_Configuration(void)
 {
 	
 	SPI_InitTypeDef SPI2_InitStructure;
 	
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
 	
-	SPI2_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32;
-	SPI2_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
-	SPI2_InitStructure.SPI_CPOL = SPI_CPOL_Low;
+	SPI2_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_256;
+	SPI2_InitStructure.SPI_CPHA = SPI_CPHA_2Edge;
+	SPI2_InitStructure.SPI_CPOL = SPI_CPOL_High;
 	//SPI1_InitStructure.SPI_CRCPolynomial = 7;
-	SPI2_InitStructure.SPI_DataSize = SPI_DataSize_8b;
+	SPI2_InitStructure.SPI_DataSize = SPI_DataSize_16b;
 	SPI2_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 	SPI2_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
 	SPI2_InitStructure.SPI_Mode = SPI_Mode_Master;
@@ -137,12 +168,12 @@ void GPIO_Configuration(void)
 	SPI_Init(SPI2, &SPI2_InitStructure);
 	
 	SPI_Cmd(SPI2, ENABLE);
-	SPI_NSSInternalSoftwareConfig(SPI2, SPI_NSSInternalSoft_Set);
-	//NVIC_EnableIRQ(SPI2_IRQn);
+	//SPI_NSSInternalSoftwareConfig(SPI2, SPI_NSSInternalSoft_Set);
+	NVIC_EnableIRQ(SPI2_IRQn);
 	
-	//SPI_I2S_ITConfig(SPI2, SPI_FLAG_RXNE|SPI_FLAG_TXE , ENABLE);
+	SPI_I2S_ITConfig(SPI2, SPI_IT_RXNE , ENABLE);
 	
-}*/
+}
 
 // ********************************************************************************
 
@@ -175,11 +206,12 @@ void USART_Configuration(void)
 int main(void)
 {
 	int i;
-	uint16_t SPI_data = 0;
+	uint16_t SPI_data = 0, SPI_data1 = 0;
 	GPIO_Configuration();
 	//GPIO_SetBits(GPIOD, GPIO_Pin_14);
 	//for (i = 0; i< 10000000;i++);	
 	USART_Configuration();
+	SPI_Configuration();
 	//for (i = 0; i< 10000000;i++);
 	//GPIO_ResetBits(GPIOD, GPIO_Pin_14); 
 	__enable_irq (); // All interrupt ON
@@ -206,18 +238,13 @@ int main(void)
 	USART_SendData(USART2, SPI_data);		*/
 	while (1)
 	{
-    /*GPIO_ResetBits(GPIOB, GPIO_Pin_12);
-		SPI_I2S_SendData(SPI2, 2);
-		while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_BSY) == SET) {};
-		if (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == SET)
-			SPI_data = SPI_I2S_ReceiveData(SPI2);
-	
-		if (SPI_data == 2)
-			GPIO_SetBits(GPIOD, GPIO_Pin_15); 
-		else
-			GPIO_SetBits(GPIOD, GPIO_Pin_14);
+		for (i = 0; i< 10000000;i++);
 		
-		GPIO_SetBits(GPIOB, GPIO_Pin_12);*/;
+		GPIO_ResetBits(GPIOB, GPIO_Pin_12);
+		
+		SPI_I2S_SendData(SPI2, 2);
+		
+		
 	}
 }
 
