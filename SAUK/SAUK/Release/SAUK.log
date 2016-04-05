@@ -1,0 +1,29 @@
+﻿Build started 15.03.2016 22:09:20.
+     1>Project "C:\Users\m\documents\visual studio 2010\Projects\SAUK\SAUK\SAUK.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Touching "Release\SAUK.unsuccessfulbuild".
+       GenerateTargetFrameworkMonikerAttribute:
+       Skipping target "GenerateTargetFrameworkMonikerAttribute" because all output files are up-to-date with respect to the input files.
+       ClCompile:
+         All outputs are up-to-date.
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /AI"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0" /Zi /clr:pure /nologo /W3 /WX- /O2 /Oy- /D WIN32 /D NDEBUG /D _UNICODE /D UNICODE /EHa /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"Release\SAUK.pch" /Fo"Release\\" /Fd"Release\vc100.pdb" /TP /FU"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\System.Core.dll" /FU"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\System.Data.dll" /FU"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\System.dll" /FU"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\System.Drawing.dll" /FU"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\System.Windows.Forms.dll" /FU"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\System.Xml.dll" /analyze- /errorReport:prompt SAUK.cpp /clr:nostdlib 
+         SAUK.cpp
+         All outputs are up-to-date.
+       CoreResGen:
+         No resources are out of date with respect to their source files. Skipping resource generation.
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\m\documents\visual studio 2010\Projects\SAUK\Release\SAUK.exe" /INCREMENTAL:NO /NOLOGO /ASSEMBLYRESOURCE:Release\SAUK.Form1.resources /MANIFEST /ManifestFile:"Release\SAUK.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\m\documents\visual studio 2010\Projects\SAUK\Release\SAUK.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /ENTRY:"main" /DYNAMICBASE /FIXED:NO /NXCOMPAT /MACHINE:X86 Release\AssemblyInfo.obj
+         Release\SAUK.obj
+         Release\stdafx.obj
+         "Release\.NETFramework,Version=v4.0.AssemblyAttributes.obj"
+         SAUK.vcxproj -> C:\Users\m\documents\visual studio 2010\Projects\SAUK\Release\SAUK.exe
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"C:\Users\m\documents\visual studio 2010\Projects\SAUK\Release\SAUK.exe;#1" /manifest Release\SAUK.exe.intermediate.manifest
+       FinalizeBuildStatus:
+         Deleting file "Release\SAUK.unsuccessfulbuild".
+         Touching "Release\SAUK.lastbuildstate".
+     1>Done Building Project "C:\Users\m\documents\visual studio 2010\Projects\SAUK\SAUK\SAUK.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.85
