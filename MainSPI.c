@@ -24,37 +24,6 @@
 	GPIOE.[0:9] - Address bus
 */
 
-void SPI2_IRQHandler (void)
-{
-	uint16_t SPI_data = 0, Temp = 0;
-	uint8_t SPI_data1 = 0;
-	if (SPI_GetITStatus(SPI2, SPI_IT_RXNE) == SET)
-	{
-		SPI_I2S_ClearFlag(SPI2, SPI_IT_RXNE);
-		//while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_BSY) == SET) {};
-		if (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == SET)
-			SPI_data = SPI_I2S_ReceiveData(SPI2);
-		GPIO_SetBits(GPIOB, GPIO_Pin_12);
-		if (SPI_data == 0xFFFF)
-		{
-			GPIO_SetBits(GPIOD, GPIO_Pin_15);
-			GPIO_ResetBits(GPIOD, GPIO_Pin_14);
-		}		
-		else
-		{
-			GPIO_SetBits(GPIOD, GPIO_Pin_14);
-			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
-			Temp = SPI_data>>7;
-		}
-		
-		//SPI_data1 = SPI_data>>8;
-		USART_SendData(USART2, Temp);
-		while (USART_GetFlagStatus(USART2, USART_FLAG_TC != SET)){};
-		//USART_SendData(USART2, SPI_data);
-		//while (USART_GetFlagStatus(USART2, USART_FLAG_TC != SET)){};
-	}
-}
-
 // ********************************************************************************
 void USART2_IRQHandler(void)
 {
@@ -171,7 +140,7 @@ void SPI_Configuration(void)
 	//SPI_NSSInternalSoftwareConfig(SPI2, SPI_NSSInternalSoft_Set);
 	NVIC_EnableIRQ(SPI2_IRQn);
 	
-	SPI_I2S_ITConfig(SPI2, SPI_IT_RXNE , ENABLE);
+	SPI_I2S_ITConfig(SPI2, SPI_FLAG_RXNE , ENABLE);
 	
 }
 
@@ -236,14 +205,33 @@ int main(void)
 	USART_SendData(USART2, SPI_data);
 	while (USART_GetFlagStatus(USART2, USART_FLAG_TXE == SET)){};
 	USART_SendData(USART2, SPI_data);		*/
+	for (i = 0; i< 1000000;i++);
 	while (1)
 	{
-		for (i = 0; i< 10000000;i++);
-		
+		for (i = 0; i< 1000000;i++);
+		//while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_BSY) == SET) {};
 		GPIO_ResetBits(GPIOB, GPIO_Pin_12);
-		
 		SPI_I2S_SendData(SPI2, 2);
+		if (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == SET)
+			SPI_data = SPI_I2S_ReceiveData(SPI2);
+		GPIO_SetBits(GPIOB, GPIO_Pin_12);
 		
+		if (SPI_data == 0xFFFF)
+		{
+			GPIO_SetBits(GPIOD, GPIO_Pin_15);
+			GPIO_ResetBits(GPIOD, GPIO_Pin_14);
+		}		
+		else
+		{
+			GPIO_SetBits(GPIOD, GPIO_Pin_14);
+			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
+		}
+		SPI_data1 = SPI_data>>8;
+		USART_SendData(USART2, SPI_data1);
+		while (USART_GetFlagStatus(USART2, USART_FLAG_TC != SET)){};
+		USART_SendData(USART2, SPI_data);
+		while (USART_GetFlagStatus(USART2, USART_FLAG_TC != SET)){};
+		for (i = 0; i< 10000000;i++);
 		
 	}
 }
