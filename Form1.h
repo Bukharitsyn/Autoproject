@@ -47,11 +47,13 @@ namespace SAUK {
 	private: System::Windows::Forms::TrackBar^  locationTrackBar;
 	private: System::Windows::Forms::Label^  stateLabel;
 
-	private: String^ s;
+	private: String^ s,^t;
 	private: System::Windows::Forms::Timer^  timer1;
 	private: System::Windows::Forms::Button^  connectButton;
 	private: System::Windows::Forms::ComboBox^  comboBox1;
 	private: System::Windows::Forms::Button^  sendButton;
+	private: System::Windows::Forms::Timer^  timer2;
+	private: System::Windows::Forms::Label^  curTempLabel;
 
 
 	private: System::ComponentModel::IContainer^  components;
@@ -80,6 +82,8 @@ namespace SAUK {
 			this->connectButton = (gcnew System::Windows::Forms::Button());
 			this->comboBox1 = (gcnew System::Windows::Forms::ComboBox());
 			this->sendButton = (gcnew System::Windows::Forms::Button());
+			this->timer2 = (gcnew System::Windows::Forms::Timer(this->components));
+			this->curTempLabel = (gcnew System::Windows::Forms::Label());
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->tempTrackBar))->BeginInit();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->locationTrackBar))->BeginInit();
 			this->SuspendLayout();
@@ -87,20 +91,20 @@ namespace SAUK {
 			// tempLabel
 			// 
 			this->tempLabel->AutoSize = true;
-			this->tempLabel->Location = System::Drawing::Point(46, 31);
+			this->tempLabel->Location = System::Drawing::Point(44, 18);
 			this->tempLabel->Name = L"tempLabel";
-			this->tempLabel->Size = System::Drawing::Size(74, 13);
+			this->tempLabel->Size = System::Drawing::Size(93, 26);
 			this->tempLabel->TabIndex = 7;
-			this->tempLabel->Text = L"Температура";
+			this->tempLabel->Text = L"     Граничная\r\nТемпература 0 C";
 			// 
 			// locationLabel
 			// 
 			this->locationLabel->AutoSize = true;
 			this->locationLabel->Location = System::Drawing::Point(46, 99);
 			this->locationLabel->Name = L"locationLabel";
-			this->locationLabel->Size = System::Drawing::Size(65, 13);
+			this->locationLabel->Size = System::Drawing::Size(80, 13);
 			this->locationLabel->TabIndex = 8;
-			this->locationLabel->Text = L"Положение";
+			this->locationLabel->Text = L"Положение 10";
 			// 
 			// serialPort1
 			// 
@@ -161,7 +165,7 @@ namespace SAUK {
 			// 
 			// sendButton
 			// 
-			this->sendButton->Location = System::Drawing::Point(45, 151);
+			this->sendButton->Location = System::Drawing::Point(49, 166);
 			this->sendButton->Name = L"sendButton";
 			this->sendButton->Size = System::Drawing::Size(75, 23);
 			this->sendButton->TabIndex = 14;
@@ -169,11 +173,26 @@ namespace SAUK {
 			this->sendButton->UseVisualStyleBackColor = true;
 			this->sendButton->Click += gcnew System::EventHandler(this, &Form1::sendButton_Click);
 			// 
+			// timer2
+			// 
+			this->timer2->Interval = 5000;
+			this->timer2->Tick += gcnew System::EventHandler(this, &Form1::timer2_Tick);
+			// 
+			// curTempLabel
+			// 
+			this->curTempLabel->AutoSize = true;
+			this->curTempLabel->Location = System::Drawing::Point(162, 163);
+			this->curTempLabel->Name = L"curTempLabel";
+			this->curTempLabel->Size = System::Drawing::Size(93, 13);
+			this->curTempLabel->TabIndex = 15;
+			this->curTempLabel->Text = L"Температура 0 C";
+			// 
 			// Form1
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->ClientSize = System::Drawing::Size(279, 237);
+			this->Controls->Add(this->curTempLabel);
 			this->Controls->Add(this->sendButton);
 			this->Controls->Add(this->comboBox1);
 			this->Controls->Add(this->connectButton);
@@ -240,35 +259,53 @@ namespace SAUK {
 	private: System::Void Form1_Load(System::Object^  sender, System::EventArgs^  e) {
 				 SetPortName();
 				 s=L"Состояние";
+				 t=L"0";
 				 sendButton->Enabled=false;
 			 }
 	private: System::Void TrackBar_ValueChanged(System::Object^  sender, System::EventArgs^  e) {
 
-				 tempLabel->Text=String::Format("Температура {0} C",tempTrackBar->Value);
+				 tempLabel->Text=String::Format("     Граничная\r\nТемпература {0} C",tempTrackBar->Value);
 				 locationLabel->Text=String::Format("Положение {0}",locationTrackBar->Value);
 
 			 }
 	private: System::Void serialPort1_DataReceived(System::Object^  sender, System::IO::Ports::SerialDataReceivedEventArgs^  e) {
 				 s=serialPort1->ReadExisting();
 				 String^ r="reset";
-
-				 for(int i=0;i<=(s->Length-r->Length);i++)
-				 {
+				 for(int i=0;i<=(s->Length-r->Length);i++)	
 					 if(String::Compare(s,i,r,0,r->Length)==0)
 					 {
 						 s=L"Сброшен";
 						 return;
-					 }	
-				 }				 
+					 }
+					 r="OK";
+					 for(int i=0;i<=(s->Length-r->Length);i++)
+						 if(String::Compare(s,i,r,0,r->Length)==0)
+						 {
+							 try{
+							 t=t->Remove(0);
+							 t=s->Remove(0,i+2);							 
+							 t=Convert::ToString(Convert::ToInt32(s[i+2]));
+							 s=s->Remove(i+2);
+							 }
+							 catch(...)
+							 {
+								 t="0";
+							 }
+							 //Debug::Write(t);
+							 //s=String::Format("{0:d}",s[0]);
+							 return;
+						 }				 				 
 			 }
 	private: System::Void timer1_Tick(System::Object^  sender, System::EventArgs^  e) {
 				 stateLabel->Text=s;
+				 curTempLabel->Text = String::Format("Температура {0} C",t);
 			 }
 	private: System::Void connectButton_Click(System::Object^  sender, System::EventArgs^  e) {
 				 if(Connect())
 				 {
 					 s=L"Подключен";
 					 sendButton->Enabled=true;
+					 timer2->Enabled=true;
 				 }
 				 else
 					 s=L"Нет подключения";
@@ -289,6 +326,9 @@ namespace SAUK {
 	private: System::Void Form1_FormClosing(System::Object^  sender, System::Windows::Forms::FormClosingEventArgs^  e) {
 				 if(serialPort1->IsOpen)
 					 serialPort1->Close();
+			 }
+	private: System::Void timer2_Tick(System::Object^  sender, System::EventArgs^  e) {
+				 serialPort1->Write("TMP");
 			 }
 	};
 }
