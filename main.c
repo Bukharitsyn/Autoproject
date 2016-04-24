@@ -1,5 +1,5 @@
 #include "stm32f4xx.h"
-#include <stdio.h>
+#include <string.h>
 
 /* pinmap
 	GPIOA.0 - CTS2
@@ -24,33 +24,39 @@
 	GPIOE.[0:9] - Address bus
 */
 
+char a[4];
+uint8_t k = 0;
+uint8_t WannaTemp;
+uint8_t Turn;
+uint8_t TMP;
+uint8_t flag = 0;
+
 void SPI2_IRQHandler (void)
 {
-	uint16_t SPI_data = 0, Temp = 0;
-	uint8_t SPI_data1 = 0;
+	uint16_t SPI_data = 0;
+
 	if (SPI_GetITStatus(SPI2, SPI_IT_RXNE) == SET)
 	{
 		SPI_I2S_ClearFlag(SPI2, SPI_IT_RXNE);
 		//while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_BSY) == SET) {};
 		if (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == SET)
 			SPI_data = SPI_I2S_ReceiveData(SPI2);
+		while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_BSY) == SET) {};
 		GPIO_SetBits(GPIOB, GPIO_Pin_12);
-		if (SPI_data == 0xFFFF)
+		
+		if (SPI_data>>15 == 0x1)
 		{
-			GPIO_SetBits(GPIOD, GPIO_Pin_15);
-			GPIO_ResetBits(GPIOD, GPIO_Pin_14);
+			GPIO_SetBits(GPIOD, GPIO_Pin_12);
+			//GPIO_ResetBits(GPIOD, GPIO_Pin_14);
 		}		
 		else
 		{
-			GPIO_SetBits(GPIOD, GPIO_Pin_14);
-			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
-			Temp = SPI_data>>7;
+			//GPIO_SetBits(GPIOD, GPIO_Pin_14);
+			GPIO_ResetBits(GPIOD, GPIO_Pin_12);
+			TMP = SPI_data>>7;
 		}
 		
-		//SPI_data1 = SPI_data>>8;
-		USART_SendData(USART2, Temp);
-		while (USART_GetFlagStatus(USART2, USART_FLAG_TC != SET)){};
-		//USART_SendData(USART2, SPI_data);
+		//USART_SendData(USART2, SPI_data>>7);
 		//while (USART_GetFlagStatus(USART2, USART_FLAG_TC != SET)){};
 	}
 }
@@ -58,16 +64,82 @@ void SPI2_IRQHandler (void)
 // ********************************************************************************
 void USART2_IRQHandler(void)
 {
-	//int i;
+	uint8_t OK[2] = "OK";
 	if (USART_GetITStatus(USART2, USART_IT_RXNE) == SET)
 	{
-			
 		USART_ClearFlag(USART2, USART_IT_RXNE); //Clear RXNE interrupt flag
+		a[k] = USART2->DR;
+		k++;
 		
-		GPIO_SetBits(GPIOD, GPIO_Pin_15); 	// Blue LED ON
-		//for (i = 0; i< 1000000;i++);
-		GPIO_ResetBits(GPIOD, GPIO_Pin_15); // Blue LED OFF
-		USART2->DR = (USART2->DR); 		// Transmit new data
+		if (k == 3)
+		{
+			if (strcmp(a, "TMP") == 0)
+			{
+				
+				GPIO_ResetBits(GPIOB, GPIO_Pin_12);
+				SPI_I2S_SendData(SPI2, 2);
+				
+				k = 0;
+				while (k != 3)
+				{
+					if (k == 0 || k == 1)
+					{
+						while(USART_GetFlagStatus(USART2, USART_FLAG_TXE)== RESET){}
+						USART2->DR = OK[k];
+					}
+					if (k == 2)
+					{
+						while(USART_GetFlagStatus(USART2, USART_FLAG_TXE)== RESET){}
+							USART2->DR = TMP;
+					}
+					k++;
+				}
+				for (k = 0; k < 3; k++)
+					a[k] = 0;
+				
+				k = 0;
+			}
+		}
+		
+		if (k == 4)
+		{
+			if (!((a[0] == 'W') && (a[1] == 'R')))
+			{
+				for (k = 0; k < 4; k++)
+					a[k] = 0;
+				k = 0;
+			}
+			else
+			{
+				k = 0;
+				WannaTemp = a[2];
+				Turn = a[3];
+				while (k != 3)
+				{
+					if (k == 0 || k == 1)
+					{
+						while(USART_GetFlagStatus(USART2, USART_FLAG_TXE)== RESET){}
+						USART2->DR = OK[k];
+					}
+					if (k == 2)
+					{
+						while(USART_GetFlagStatus(USART2, USART_FLAG_TXE)== RESET){}
+							USART2->DR = TMP;
+					}
+					k++;
+				}
+			
+				for (k = 0; k < 4; k++)
+					a[k] = 0;
+				
+				k = 0;
+			}
+
+		}
+		//GPIO_SetBits(GPIOD, GPIO_Pin_15); 	// Blue LED ON
+		//GPIO_ResetBits(GPIOD, GPIO_Pin_15); // Blue LED OFF
+		
+		// USART2->DR = (USART2->DR); 		// Transmit new data
 	}
 }
 
@@ -120,6 +192,8 @@ void GPIO_Configuration(void)
 	
 	ledinit.GPIO_Pin |= GPIO_Pin_14; // LED on pin 14
 	GPIO_Init(GPIOD, &ledinit);  	// Init port GPIOD
+	ledinit.GPIO_Pin |= GPIO_Pin_12; // LED on pin 14
+	GPIO_Init(GPIOD, &ledinit);  	// Init port GPIOD
 	
 	//////////////////////////////////////////
 	
@@ -168,7 +242,7 @@ void SPI_Configuration(void)
 	SPI_Init(SPI2, &SPI2_InitStructure);
 	
 	SPI_Cmd(SPI2, ENABLE);
-	//SPI_NSSInternalSoftwareConfig(SPI2, SPI_NSSInternalSoft_Set);
+	SPI_NSSInternalSoftwareConfig(SPI2, SPI_NSSInternalSoft_Set);
 	NVIC_EnableIRQ(SPI2_IRQn);
 	
 	SPI_I2S_ITConfig(SPI2, SPI_IT_RXNE , ENABLE);
@@ -205,8 +279,6 @@ void USART_Configuration(void)
 
 int main(void)
 {
-	int i;
-	uint16_t SPI_data = 0, SPI_data1 = 0;
 	GPIO_Configuration();
 	//GPIO_SetBits(GPIOD, GPIO_Pin_14);
 	//for (i = 0; i< 10000000;i++);	
@@ -238,12 +310,23 @@ int main(void)
 	USART_SendData(USART2, SPI_data);		*/
 	while (1)
 	{
-		for (i = 0; i< 10000000;i++);
-		
-		GPIO_ResetBits(GPIOB, GPIO_Pin_12);
-		
-		SPI_I2S_SendData(SPI2, 2);
-		
-		
+		//for (i = 0; i< 10000000;i++);
+		if (TMP > WannaTemp + 3 )
+		{
+			GPIO_SetBits(GPIOD, GPIO_Pin_15); // Too hot
+			GPIO_ResetBits(GPIOD, GPIO_Pin_14);
+		}
+		else if (TMP < WannaTemp - 3 )
+		{
+			GPIO_SetBits(GPIOD, GPIO_Pin_14); // Too cold
+			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
+		}
+		else
+		{
+			GPIO_ResetBits(GPIOD, GPIO_Pin_14); // Chetko!
+			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
+		}	
+		//GPIO_ResetBits(GPIOB, GPIO_Pin_12);
+		//SPI_I2S_SendData(SPI2, 2);
 	}
 }
