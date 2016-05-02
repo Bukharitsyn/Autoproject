@@ -26,10 +26,11 @@
 
 char a[4];
 uint8_t k = 0;
-uint8_t WannaTemp;
+int8_t WannaTemp;
 uint8_t Turn;
 uint8_t TMP;
 uint8_t flag = 0;
+uint8_t OK[2] = "OK";
 
 void SPI2_IRQHandler (void)
 {
@@ -64,7 +65,7 @@ void SPI2_IRQHandler (void)
 // ********************************************************************************
 void USART2_IRQHandler(void)
 {
-	uint8_t OK[2] = "OK";
+	
 	if (USART_GetITStatus(USART2, USART_IT_RXNE) == SET)
 	{
 		USART_ClearFlag(USART2, USART_IT_RXNE); //Clear RXNE interrupt flag
@@ -279,38 +280,24 @@ void USART_Configuration(void)
 
 int main(void)
 {
+	int i;
+	uint8_t Ready[5] = "READY";
 	GPIO_Configuration();
-	//GPIO_SetBits(GPIOD, GPIO_Pin_14);
-	//for (i = 0; i< 10000000;i++);	
 	USART_Configuration();
 	SPI_Configuration();
-	//for (i = 0; i< 10000000;i++);
-	//GPIO_ResetBits(GPIOD, GPIO_Pin_14); 
+	
 	__enable_irq (); // All interrupt ON
-	//for (i = 0; i< 10000000;i++);
-	USART2->DR = '!'; // Test data
-	//USART_SendData (USART3, 'w'); // Test data
-	/*
-	GPIO_ResetBits(GPIOB, GPIO_Pin_12);
-	SPI_I2S_SendData(SPI2, 2);
-	while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_BSY) == SET) {};
+	for (i = 0; i < 100000;i++);
+	for (i = 0; i < 5; i++)
+	{
+		while(USART_GetFlagStatus(USART2, USART_FLAG_TXE)== RESET){}
+						USART2->DR = Ready[i];
+	}
+	//USART2->DR = '!'; // Test data
 	
-	SPI_data = SPI_I2S_ReceiveData(SPI2);
-	while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_BSY) == SET) {};
-	
-	if (SPI_data == 2)
-		GPIO_SetBits(GPIOD, GPIO_Pin_15); 
-	else
-		GPIO_SetBits(GPIOD, GPIO_Pin_14);
-		
-	GPIO_SetBits(GPIOB, GPIO_Pin_12);
-
-	USART_SendData(USART2, SPI_data);
-	while (USART_GetFlagStatus(USART2, USART_FLAG_TXE == SET)){};
-	USART_SendData(USART2, SPI_data);		*/
 	while (1)
 	{
-		//for (i = 0; i< 10000000;i++);
+		
 		if (TMP > WannaTemp + 3 )
 		{
 			GPIO_SetBits(GPIOD, GPIO_Pin_15); // Too hot
@@ -326,7 +313,6 @@ int main(void)
 			GPIO_ResetBits(GPIOD, GPIO_Pin_14); // Chetko!
 			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
 		}	
-		//GPIO_ResetBits(GPIOB, GPIO_Pin_12);
-		//SPI_I2S_SendData(SPI2, 2);
+		
 	}
 }
