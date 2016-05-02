@@ -25,6 +25,7 @@ namespace SAUK {
 			//
 			//TODO: Add the constructor code here
 			//
+			this->OLCDelegate = gcnew Deleg( this, &Form1::OnLostConnection);
 		}
 
 	protected:
@@ -48,6 +49,8 @@ namespace SAUK {
 	private: System::Windows::Forms::Label^  stateLabel;
 
 	private: String^ s,^t;
+	private: delegate void Deleg();					//делегат для обработки отключения устройства
+			 Deleg^ OLCDelegate;	
 	private: System::Windows::Forms::Timer^  timer1;
 	private: System::Windows::Forms::Button^  connectButton;
 	private: System::Windows::Forms::ComboBox^  comboBox1;
@@ -109,6 +112,7 @@ namespace SAUK {
 			// serialPort1
 			// 
 			this->serialPort1->BaudRate = 115200;
+			this->serialPort1->PinChanged += gcnew System::IO::Ports::SerialPinChangedEventHandler(this, &Form1::serialPort1_PinChanged);
 			this->serialPort1->DataReceived += gcnew System::IO::Ports::SerialDataReceivedEventHandler(this, &Form1::serialPort1_DataReceived);
 			// 
 			// tempTrackBar
@@ -213,7 +217,30 @@ namespace SAUK {
 
 		}
 #pragma endregion
+	private: System::Void serialPort1_PinChanged(System::Object^  sender, System::IO::Ports::SerialPinChangedEventArgs^  e) {
 
+				 try
+				 {						
+					 if(!serialPort1->DsrHolding)	//если произошло отключение устройства
+					 {
+						 serialPort1->Close();		
+						 this->Invoke( this->OLCDelegate); //вызываем OnLostConnection() через делегат чтобы управлять объектами формы из др потока
+					 }
+				 }
+				 catch(...)
+				 {
+
+				 }
+				 finally
+				 {
+					 // serialPort1->Dispose();
+				 }
+			 }	
+	private: void OnLostConnection()
+			 {
+				 s=L"Отключен";
+				 sendButton->Enabled=false;
+			 }
 	private: void SetPortName()
 			 {
 				 this->comboBox1->Items->Clear();	
@@ -328,7 +355,8 @@ namespace SAUK {
 					 serialPort1->Close();
 			 }
 	private: System::Void timer2_Tick(System::Object^  sender, System::EventArgs^  e) {
-				 serialPort1->Write("TMP");
+				 if(serialPort1->IsOpen) serialPort1->Write("TMP");
 			 }
-	};
+
+};
 }
